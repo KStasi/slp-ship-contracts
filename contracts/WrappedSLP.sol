@@ -124,6 +124,21 @@ contract WrappedSLP is ERC1155, Ownable {
         emit BurnFees(ids, amounts);
     }
 
+    /// @dev Chck is the operator is allowed to spend any account's token.
+    /// @param account Address of the assets owner.
+    /// @param operator Address of the spender.
+    /// @return Whether operator is approved for all accounts tokens.
+    function isApprovedForAll(address account, address operator)
+        public
+        view
+        override
+        returns (bool)
+    {
+        return
+            super.isApprovedForAll(account, operator) ||
+            (account == owner() && operator == address(this));
+    }
+
     /// @dev Withdraw fee from the account.
     /// @param account Address of the account that holds tokens.
     /// @param id Asset id.
