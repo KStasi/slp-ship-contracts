@@ -33,14 +33,20 @@ contract WrappedSLP is ERC20, Ownable {
         mapping(uint256 => Withdraw) withdraws; // withdrawal requests
     }
 
+    string public slpAddress; // address of the original SLP
     uint256 public chargePerSecRate = 316880878; // holders fee, 1% per year
     mapping(address => User) public users; // accounts info
 
     /// @dev Contract constructor sets initial owner and grants the rights.
-    constructor(string memory _name, string memory _symbol)
-        ERC20(_name, _symbol)
-        Ownable()
-    {}
+    /// @param _name Token's name.
+    /// @param _symbol Token's symbol.
+    constructor(
+        string memory _slp,
+        string memory _name,
+        string memory _symbol
+    ) ERC20(_name, _symbol) Ownable() {
+        slpAddress = _slp;
+    }
 
     /// @dev Mints new wrapped tokens to the address.
     /// @param _account Tokens receiver.
@@ -142,6 +148,10 @@ contract WrappedSLP is ERC20, Ownable {
         userInfo.lastUpdate = block.timestamp;
     }
 
+    /// @dev Transfer assets between addresses.
+    /// @param _sender Address of the account that sends tokens.
+    /// @param _recipient Address of the account that receivers tokens.
+    /// @param _amount Amount of tokens to ne sent.
     function _transfer(
         address _sender,
         address _recipient,
