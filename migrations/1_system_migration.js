@@ -5,5 +5,5 @@ module.exports = async function (deployer, _network, accounts) {
   const owners = accounts.slice(0, 3);
   const required = 3;
   await deployer.deploy(MultiSigWallet, owners, required);
-  await deployer.deploy(WrappedSLP);
+  await deployer.deploy(WrappedSLP, "", "");
 };

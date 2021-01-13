@@ -1,19 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.7.0;
 
-import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 
 /// @title Wrapped SLP - Allows to SLP tokens to the Ethereum network.
-contract WrappedSLP is ERC1155, Ownable {
-    event SlpLocked(uint256 indexed id, uint256 amount, string indexed slpTrx);
-    event SlpLockedBack(uint256 indexed id, uint256 amount);
-    event BurnFees(uint256[] indexed ids, uint256[] amounts);
+contract WrappedSLP is ERC20, Ownable {
+    event SlpLocked(
+        address indexed _account,
+        uint256 _amount,
+        string indexed _slpTrx
+    );
+    event SlpLockedBack(address indexed _account, uint256 _id, uint256 _amount);
+    event BurnFees(uint256 _amount);
     event SlpUnlockRequested(
-        uint256 indexed id,
-        uint256 amount,
-        string indexed slpAddr
+        address indexed _account,
+        uint256 _amount,
+        string indexed _slpAddr
     );
 
     enum Status {BURNED, REQUESTED, EXEC, CANCELED}
@@ -22,13 +26,10 @@ contract WrappedSLP is ERC1155, Ownable {
         uint256 amount; // amount of tokens claimed on BCH
         Status status; // withdrawal status
     }
-    struct TokenInfo {
-        uint256 loss; // amount of borrowe fee
-        uint256 lastUpdate; // las time fee was charged
-    }
     struct User {
         uint256 head; // last deposit index
-        mapping(uint256 => TokenInfo) tokensInfo; // assets fee info
+        uint256 loss; // amount of borrowe fee
+        uint256 lastUpdate; // las time fee was charged
         mapping(uint256 => Withdraw) withdraws; // withdrawal requests
     }
 
@@ -36,156 +37,120 @@ contract WrappedSLP is ERC1155, Ownable {
     mapping(address => User) public users; // accounts info
 
     /// @dev Contract constructor sets initial owner and grants the rights.
-    constructor() ERC1155("http://slpship.com/wslp/{id}.json") Ownable() {}
+    constructor(string memory _name, string memory _symbol)
+        ERC20(_name, _symbol)
+        Ownable()
+    {}
 
     /// @dev Mints new wrapped tokens to the address.
-    /// @param account Tokens receiver.
-    /// @param id Asset id.
-    /// @param amount Asset's quatity.
-    /// @param slpTrx Hash of the transaction where original SLP sent.
+    /// @param _account Tokens receiver.
+    /// @param _amount Asset's quatity.
+    /// @param _slpTrx Hash of the transaction where original SLP sent.
     function deposit(
-        address account,
-        uint256 id,
-        uint256 amount,
-        string memory slpTrx
+        address _account,
+        uint256 _amount,
+        string memory _slpTrx
     ) external onlyOwner {
-        _mint(account, id, amount, new bytes(0));
-        emit SlpLocked(id, amount, slpTrx);
+        _mint(_account, _amount);
+        emit SlpLocked(_account, _amount, _slpTrx);
     }
 
     /// @dev Burns wrapped tokens to request original SLP.
-    /// @param account Tokens burner.
-    /// @param id Asset id.
-    /// @param amount Asset's quatity.
-    /// @param slpAddr Address of the SLP receiver.
+    /// @param _account Tokens burner.
+    /// @param _amount Asset's quatity.
+    /// @param _slpAddr Address of the SLP receiver.
     function withdraw(
-        address account,
-        uint256 id,
-        uint256 amount,
-        string memory slpAddr
+        address _account,
+        uint256 _amount,
+        string memory _slpAddr
     ) external {
         require(
-            account == _msgSender() || isApprovedForAll(account, _msgSender()),
+            _account == _msgSender(),
             "ERC1155: caller is not owner nor approved"
         );
-        _burn(account, id, amount);
+        _burn(_account, _amount);
         users[_msgSender()].withdraws[users[_msgSender()].head++]
-            .amount = amount;
-        emit SlpUnlockRequested(id, amount, slpAddr);
+            .amount = _amount;
+        emit SlpUnlockRequested(_account, _amount, _slpAddr);
     }
 
     /// @dev Requests canceling the original SLP token transfer.
-    /// @param id Withdraw request id.
-    function requestCancel(uint256 id) external {
+    /// @param _id Withdraw request id.
+    function requestCancel(uint256 _id) external {
         require(
-            users[_msgSender()].head > id,
+            users[_msgSender()].head > _id,
             "ERC1155: request doesn't exist"
         );
         require(
-            users[_msgSender()].withdraws[id].status == Status.BURNED,
+            users[_msgSender()].withdraws[_id].status == Status.BURNED,
             "ERC1155: wrong request status"
         );
-        users[_msgSender()].withdraws[id].status = Status.REQUESTED;
+        users[_msgSender()].withdraws[_id].status = Status.REQUESTED;
     }
 
     /// @dev Returns wrapped SLP after canceling the original SLP unlock.
-    /// @param account Address of the account that requested canceling.
-    /// @param id Withdraw request id.
-    function execCancel(address account, uint256 id) external onlyOwner {
+    /// @param _account Address of the account that requested canceling.
+    /// @param _id Withdraw request id.
+    function execCancel(address _account, uint256 _id) external onlyOwner {
         require(
-            users[_msgSender()].withdraws[id].status == Status.REQUESTED,
+            users[_msgSender()].withdraws[_id].status == Status.REQUESTED,
             "ERC1155: wrong request status"
         );
-        uint256 amount = users[account].withdraws[id].amount;
-        _mint(account, id, amount, new bytes(0));
-        users[account].withdraws[id].status = Status.CANCELED;
-        emit SlpLockedBack(id, amount);
+        uint256 amount = users[_account].withdraws[_id].amount;
+        _mint(_account, amount);
+        users[_account].withdraws[_id].status = Status.CANCELED;
+        emit SlpLockedBack(_account, _id, amount);
     }
 
     /// @dev Regects canceling the original SLP unlock.
-    /// @param account Address of the account that requested canceling.
-    /// @param id Withdraw request id.
-    function rejectCancel(address account, uint256 id) external onlyOwner {
+    /// @param _account Address of the account that requested canceling.
+    /// @param _id Withdraw request id.
+    function rejectCancel(address _account, uint256 _id) external onlyOwner {
         require(
-            users[_msgSender()].withdraws[id].status == Status.REQUESTED,
+            users[_msgSender()].withdraws[_id].status == Status.REQUESTED,
             "ERC1155: wrong request status"
         );
-        users[account].withdraws[id].status = Status.EXEC;
+        users[_account].withdraws[_id].status = Status.EXEC;
     }
 
     /// @dev Burns holder fees after the original SLP tokens burn or transfer to zero address.
-    /// @param ids Assets to be burnt.
-    function burnFees(uint256[] memory ids) external onlyOwner {
-        uint256[] memory amounts = new uint256[](ids.length);
-        for (uint256 i = 0; i < ids.length; i++) {
-            amounts[i] = balanceOf(address(this), ids[i]);
-        }
-        _burnBatch(address(this), ids, amounts);
-        emit BurnFees(ids, amounts);
-    }
-
-    /// @dev Chck is the operator is allowed to spend any account's token.
-    /// @param account Address of the assets owner.
-    /// @param operator Address of the spender.
-    /// @return Whether operator is approved for all accounts tokens.
-    function isApprovedForAll(address account, address operator)
-        public
-        view
-        override
-        returns (bool)
-    {
-        return
-            super.isApprovedForAll(account, operator) ||
-            (account == owner() && operator == address(this));
+    function burnFees() external onlyOwner {
+        uint256 amount = balanceOf(address(this));
+        _burn(address(this), amount);
+        emit BurnFees(amount);
     }
 
     /// @dev Withdraw fee from the account.
-    /// @param account Address of the account that holds tokens.
-    /// @param id Asset id.
-    function _chargeHolderFee(address account, uint256 id) internal {
-        TokenInfo storage tokenInfo = users[_msgSender()].tokensInfo[id];
-        uint256 balance = balanceOf(account, id);
-        if (balance > 0 && block.timestamp > tokenInfo.lastUpdate) {
-            tokenInfo.loss =
-                (block.timestamp - tokenInfo.lastUpdate) *
+    /// @param _account Address of the account that holds tokens.
+    function _chargeHolderFee(address _account) internal {
+        User storage userInfo = users[_account];
+        uint256 balance = balanceOf(_account);
+        if (balance > 0 && block.timestamp > userInfo.lastUpdate) {
+            userInfo.loss =
+                (block.timestamp - userInfo.lastUpdate) *
                 chargePerSecRate;
-            uint256 payableLoss = tokenInfo.loss / 1e18;
+            uint256 payableLoss = userInfo.loss / 1e18;
             if (payableLoss > 0) {
-                safeTransferFrom(
-                    account,
+                super._transfer(
+                    _account,
                     address(this),
-                    id,
-                    Math.min(payableLoss, balance),
-                    new bytes(0)
+                    Math.min(payableLoss, balance)
                 );
-                tokenInfo.loss = tokenInfo.loss - payableLoss * 1e18;
+                userInfo.loss = userInfo.loss - payableLoss * 1e18;
             }
         }
-        tokenInfo.lastUpdate = block.timestamp;
+        userInfo.lastUpdate = block.timestamp;
     }
 
-    /// @dev Hook that is called before any token transfer.
-    /// @param operator Address that executes the transfer.
-    /// @param from Address that sends the tokens.
-    /// @param to Address that receives the tokens.
-    /// @param ids Assets to be transfered.
-    /// @param amounts Quantity of the assets to be transfered.
-    /// @param amounts Quantity of the assets to be transfered.
-    /// @param data Data send to the recepient after transfer if it is the contract.
-
-    function _beforeTokenTransfer(
-        address operator,
-        address from,
-        address to,
-        uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory data
+    function _transfer(
+        address _sender,
+        address _recipient,
+        uint256 _amount
     ) internal override {
-        for (uint256 i = 0; i < ids.length; i++) {
-            if (from != address(this) && from != address(0))
-                _chargeHolderFee(from, ids[i]);
-            if (to != address(this) && to != address(0))
-                _chargeHolderFee(to, ids[i]);
-        }
+        if (_sender != address(this) && _sender != address(0))
+            _chargeHolderFee(_sender);
+        if (_recipient != address(this) && _recipient != address(0))
+            _chargeHolderFee(_recipient);
+        super._transfer(_sender, _recipient, _amount);
     }
 }
