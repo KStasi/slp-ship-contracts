@@ -74,23 +74,22 @@ module.exports = {
     // network_id: 2111,   // This network is yours, in the cloud.
     // production: true    // Treats this network as if it was a public net. (default: false)
     // }
+    ropsten: {
+      network_id: "3",
+      provider: () =>
+        new HDWalletProvider(
+          [process.env.DEPLOYER_PRIVATE_KEY],
+          "https://ropsten.infura.io/v3/" + process.env.INFURA_ID,
+          0,
+          1
+        ),
+      gasPrice: 10000000000, // 80 gwei
+      gas: 6900000,
+      from: process.env.DEPLOYER_ACCOUNT,
+      timeoutBlocks: 5000,
+      skipDryRun: true,
+    },
   },
-  ropsten: {
-    network_id: "3",
-    provider: () =>
-      new HDWalletProvider(
-        [process.env.DEPLOYER_PRIVATE_KEY],
-        "https://ropsten.infura.io/v3/" + process.env.INFURA_ID,
-        0,
-        1
-      ),
-    gasPrice: 10000000000, // 80 gwei
-    gas: 6900000,
-    from: process.env.DEPLOYER_ACCOUNT,
-    timeoutBlocks: 5000,
-    skipDryRun: true,
-  },
-
   // Set default mocha options here, use special reporters etc.
   mocha: {
     reporter: "eth-gas-reporter",

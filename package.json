@@ -5,7 +5,7 @@
     "migrate": "truffle migrate",
     "compile": "truffle compile",
     "test": "truffle test",
-    "v": "truffle run verify Factory MultiSigWallet"
+    "verify": "truffle run verify Factory MultiSigWallet"
   },
   "repository": {
     "type": "git",
