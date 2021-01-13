@@ -18,10 +18,11 @@
  *
  */
 
-// const HDWalletProvider = require('@truffle/hdwallet-provider');
+require("dotenv-flow").config();
+const HDWalletProvider = require("@truffle/hdwallet-provider");
 // const infuraKey = "fj4jll3k.....";
-//
-// const fs = require('fs');
+
+// const fs = require("fs");
 // const mnemonic = fs.readFileSync(".secret").toString().trim();
 
 module.exports = {
@@ -74,10 +75,29 @@ module.exports = {
     // production: true    // Treats this network as if it was a public net. (default: false)
     // }
   },
+  ropsten: {
+    network_id: "3",
+    provider: () =>
+      new HDWalletProvider(
+        [process.env.DEPLOYER_PRIVATE_KEY],
+        "https://ropsten.infura.io/v3/" + process.env.INFURA_ID,
+        0,
+        1
+      ),
+    gasPrice: 10000000000, // 80 gwei
+    gas: 6900000,
+    from: process.env.DEPLOYER_ACCOUNT,
+    timeoutBlocks: 5000,
+    skipDryRun: true,
+  },
 
   // Set default mocha options here, use special reporters etc.
   mocha: {
-    // timeout: 100000
+    reporter: "eth-gas-reporter",
+    reporterOptions: {
+      currency: "USD",
+      gasPrice: 100,
+    },
   },
 
   // Configure your compilers
@@ -93,5 +113,9 @@ module.exports = {
       //  evmVersion: "byzantium"
       // }
     },
+  },
+  plugins: ["truffle-plugin-verify"],
+  api_keys: {
+    etherscan: process.env.ETHERSCAN_API_KEY,
   },
 };
