@@ -62,36 +62,25 @@ contract WrappedSLP is ERC20, Ownable {
     }
 
     /// @dev Burns wrapped tokens to request original SLP.
-    /// @param _account Tokens burner.
     /// @param _amount Asset's quatity.
     /// @param _slpAddr Address of the SLP receiver.
-    function withdraw(
-        address _account,
-        uint256 _amount,
-        string memory _slpAddr
-    ) external {
-        require(
-            _account == _msgSender(),
-            "ERC1155: caller is not owner nor approved"
-        );
-        _burn(_account, _amount);
-        users[_msgSender()].withdraws[users[_msgSender()].head++]
-            .amount = _amount;
-        emit SlpUnlockRequested(_account, _amount, _slpAddr);
+    function withdraw(uint256 _amount, string memory _slpAddr) external {
+        address account = _msgSender();
+        _burn(account, _amount);
+        users[account].withdraws[users[account].head++].amount = _amount;
+        emit SlpUnlockRequested(account, _amount, _slpAddr);
     }
 
     /// @dev Requests canceling the original SLP token transfer.
     /// @param _id Withdraw request id.
     function requestCancel(uint256 _id) external {
+        address account = _msgSender();
+        require(users[account].head > _id, "WrappedSLP: request doesn't exist");
         require(
-            users[_msgSender()].head > _id,
-            "ERC1155: request doesn't exist"
+            users[account].withdraws[_id].status == Status.BURNED,
+            "WrappedSLP: wrong request status"
         );
-        require(
-            users[_msgSender()].withdraws[_id].status == Status.BURNED,
-            "ERC1155: wrong request status"
-        );
-        users[_msgSender()].withdraws[_id].status = Status.REQUESTED;
+        users[account].withdraws[_id].status = Status.REQUESTED;
     }
 
     /// @dev Returns wrapped SLP after canceling the original SLP unlock.
@@ -99,8 +88,8 @@ contract WrappedSLP is ERC20, Ownable {
     /// @param _id Withdraw request id.
     function execCancel(address _account, uint256 _id) external onlyOwner {
         require(
-            users[_msgSender()].withdraws[_id].status == Status.REQUESTED,
-            "ERC1155: wrong request status"
+            users[_account].withdraws[_id].status == Status.REQUESTED,
+            "WrappedSLP: wrong request status"
         );
         uint256 amount = users[_account].withdraws[_id].amount;
         _mint(_account, amount);
@@ -113,8 +102,8 @@ contract WrappedSLP is ERC20, Ownable {
     /// @param _id Withdraw request id.
     function rejectCancel(address _account, uint256 _id) external onlyOwner {
         require(
-            users[_msgSender()].withdraws[_id].status == Status.REQUESTED,
-            "ERC1155: wrong request status"
+            users[_account].withdraws[_id].status == Status.REQUESTED,
+            "WrappedSLP: wrong request status"
         );
         users[_account].withdraws[_id].status = Status.EXEC;
     }
