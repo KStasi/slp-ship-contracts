@@ -44,8 +44,8 @@ contract WrappedSLP is ERC20, Ownable {
     /// @param _decimals Number of decimals.
     constructor(
         string memory _slp,
-        string memory _name,
         string memory _symbol,
+        string memory _name,
         uint8 _decimals
     ) ERC20(_name, _symbol) Ownable() {
         slpAddress = _slp;
