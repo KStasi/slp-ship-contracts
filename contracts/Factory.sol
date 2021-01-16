@@ -21,14 +21,16 @@ contract Factory is Ownable {
     /// @param _slp Address of the SLP token in BCH.
     /// @param _symbol Token's symbol.
     /// @param _name Token's name.
+    /// @param _decimals Number of decimals.
     /// @return _erc20 New WSLP address.
     function createWslp(
         string memory _slp,
         string memory _symbol,
-        string memory _name
+        string memory _name,
+        uint8 _decimals
     ) external returns (address _erc20) {
         require(getErc20[_slp] == address(0), "Factory: erc20 exist");
-        WrappedSLP wrappedSLP = new WrappedSLP(_slp, _symbol, _name);
+        WrappedSLP wrappedSLP = new WrappedSLP(_slp, _symbol, _name, _decimals);
         wrappedSLP.transferOwnership(owner());
         _erc20 = address(wrappedSLP);
         allTokens.push(_erc20);

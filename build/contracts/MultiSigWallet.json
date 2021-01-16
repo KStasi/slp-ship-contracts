@@ -27309,8 +27309,8 @@
         }
       },
       "links": {},
-      "address": "0x5418AB624D402A89e5852B6F1E1Fc783104b82ce",
-      "transactionHash": "0xb298b931cc21ca612fae3a55eddc15b26b41416e360a4f93307d9ded4f085618"
+      "address": "0x4DbAE13e77F6791e8FaF57805Cc51aA63b41dE32",
+      "transactionHash": "0x9aa6616056b8726c39a42b4b98ff87e0b531bc2e8c55bd8bd71675ed91eed878"
     },
     "5777": {
       "events": {
@@ -27456,7 +27456,7 @@
     }
   },
   "schemaVersion": "3.3.3",
-  "updatedAt": "2021-01-15T19:01:53.666Z",
+  "updatedAt": "2021-01-16T18:19:21.797Z",
   "networkType": "ethereum",
   "devdoc": {
     "author": "Stefan George - <stefan.george@consensys.net>",

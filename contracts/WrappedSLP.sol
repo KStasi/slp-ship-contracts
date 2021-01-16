@@ -38,14 +38,18 @@ contract WrappedSLP is ERC20, Ownable {
     mapping(address => User) public users; // accounts info
 
     /// @dev Contract constructor sets initial owner and grants the rights.
+    /// @param _slp Address of the original slp.
     /// @param _name Token's name.
     /// @param _symbol Token's symbol.
+    /// @param _decimals Number of decimals.
     constructor(
         string memory _slp,
         string memory _name,
-        string memory _symbol
+        string memory _symbol,
+        uint8 _decimals
     ) ERC20(_name, _symbol) Ownable() {
         slpAddress = _slp;
+        _setupDecimals(_decimals);
     }
 
     /// @dev Mints new wrapped tokens to the address.
