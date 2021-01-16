@@ -33,6 +33,7 @@ contract Factory is Ownable {
         WrappedSLP wrappedSLP = new WrappedSLP(_slp, _symbol, _name, _decimals);
         wrappedSLP.transferOwnership(owner());
         _erc20 = address(wrappedSLP);
+        getErc20[_slp] = _erc20;
         allTokens.push(_erc20);
         allSlp.push(_slp);
         emit WslpCreated(_slp, _erc20);
