@@ -15,6 +15,7 @@ contract WrappedSLP is ERC20, Ownable {
     event SlpLockedBack(address indexed _account, uint256 _id, uint256 _amount);
     event BurnFees(uint256 _amount);
     event SlpUnlockRequested(
+        string indexed _token,
         address indexed _account,
         uint256 _amount,
         string indexed _slpAddr
@@ -72,7 +73,7 @@ contract WrappedSLP is ERC20, Ownable {
         address account = _msgSender();
         _burn(account, _amount);
         users[account].withdraws[users[account].head++].amount = _amount;
-        emit SlpUnlockRequested(account, _amount, _slpAddr);
+        emit SlpUnlockRequested(slpAddress, account, _amount, _slpAddr);
     }
 
     /// @dev Requests canceling the original SLP token transfer.
