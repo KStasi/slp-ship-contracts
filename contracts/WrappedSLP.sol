@@ -7,18 +7,14 @@ import "@openzeppelin/contracts/math/Math.sol";
 
 /// @title Wrapped SLP - Allows to SLP tokens to the Ethereum network.
 contract WrappedSLP is ERC20, Ownable {
-    event SlpLocked(
-        address indexed _account,
-        uint256 _amount,
-        string indexed _slpTrx
-    );
-    event SlpLockedBack(address indexed _account, uint256 _id, uint256 _amount);
+    event SlpLocked(address _account, uint256 _amount, string _slpTrx);
+    event SlpLockedBack(address _account, uint256 _id, uint256 _amount);
     event BurnFees(uint256 _amount);
     event SlpUnlockRequested(
-        string indexed _token,
-        address indexed _account,
+        string _token,
+        address _account,
         uint256 _amount,
-        string indexed _slpAddr
+        string _slpAddr
     );
 
     enum Status {BURNED, REQUESTED, EXEC, CANCELED}
